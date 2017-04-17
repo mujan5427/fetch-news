@@ -9,18 +9,23 @@ var connection_db = require('./helpers/connection_db.js');
 
 request(
     { method: 'GET'
-    , uri: 'http://www.storm.mg/article/249327'
+    , uri: 'http://www.storm.mg/article/250561'
     }
     , function (error, response, body) {
 
       if (response.statusCode == 200) {
         console.log('status : ' + response.statusCode)
 
-        var article_start = body.split('<article>');
-        var article_end = article_start[1].split('</article>');
-        var article = article_end[0].split('<div class="ad_article_block">')[0];
+        var $ = cheerio.load(body);
 
-        var $ = cheerio.load(article)
+        var article_title = $('h1#article_title').text();
+        article_title = article_title.trim();
+
+        var article_author = $('a.gtm-articleAuthor').text();
+        var article_date = $('span.date').text().slice(0, 17);
+        var article_main_image = $('.imgs.mainPic > img').attr('src');
+        var article_main_image_figcation = $('.imgs.mainPic > div > p').text();
+        var article_description = $('article > p:nth-of-type(1)').text();
 
 
 
@@ -31,20 +36,22 @@ request(
 
           var figure_area = `<figure><img src="${$(`.dnd-atom-wrapper:nth-of-type(1) img`).attr('src')}"><figcaption>${$(`.dnd-atom-wrapper:nth-of-type(1) .meta`).text()}</figcaption></figure>`
 
-          console.log(i);
-
           $(`.type-image:nth-of-type(1)`).replaceWith(figure_area);
 
         }
 
+        // 文章內容處理
 
-        $('p').removeAttr('aid');
-        $('h2').removeAttr('class')
+        $('.article-wrapper > article > p').removeAttr('aid');
+        $('.article-wrapper > article > h2').removeAttr('class')
 
-        console.log(htmlDncode($.html()));
+        var article_content = $('.article-wrapper > article').html();
+        article_content = article_content.split('<div class="ad_article_block">')[0].trim();
+
+        // console.log(htmlDncode(article_content));
 
 
-        var sql = `insert into news (news_title, author, news_contetn) VALUES ('第三則新聞', '何宗軒', '${htmlDncode($.html())}')`;
+        var sql = `insert into news (news_title, author, news_contetn) VALUES ('第三則新聞', '何宗軒', '${htmlDncode(article_content)}')`;
 
         connection_db(sql);
 
