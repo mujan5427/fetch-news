@@ -20,9 +20,9 @@ var connection_db = function(sql_statment) {
   connection.connect()
 
   connection.query(sql_statment, function (err, rows, fields) {
-    if (err) throw err
 
-    console.log('result : ' + rows[0])
+    console.log(err);
+
   })
 
   connection.end()
