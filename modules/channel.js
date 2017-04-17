@@ -3,8 +3,15 @@ var cheerio = require('cheerio')
 var htmlDncode = require('js-htmlencode').htmlDecode
 var connection_db = require('../helpers/connection_db.js');
 
+var channel_type = {
+  '117': '國際',
+  '23083': '財經',
+  '84984': '藝文',
+  '118': '政治',
+};
 
-var fetch_channel = function(channel_id) {
+
+var fetch_channel = function(channel_id, channel_page) {
 
   // 發送 cUrl 抓取資料後，儲存至 Database
   //
@@ -12,7 +19,7 @@ var fetch_channel = function(channel_id) {
 
   request(
     { method: 'GET'
-    , uri: `http://www.storm.mg/article/${news_id}`
+    , uri: `http://www.storm.mg/category/${channel_id}/${channel_page}`
     }
     , function (error, response, body) {
 
@@ -21,42 +28,27 @@ var fetch_channel = function(channel_id) {
 
         var $ = cheerio.load(body);
 
-        var article_title = $('h1#article_title').text();
-        article_title = article_title.trim();
-
-        var article_author = $('.author_date > .gtm-articleAuthor').text();
-        var article_date = $('.author_date > .date').text().slice(0, 17);
-        var article_main_image = $('.imgs.mainPic > img').attr('src');
-        var article_main_image_figcation = $('.imgs.mainPic > div > p').text();
-        var article_description = $('article > p:nth-of-type(1)').text();
+        // 計算指定 channel_page 的新聞筆數
+        var news_count_per_page = $('#load > li').length;
 
 
-        // 每篇文章的圖片數量
-        var article_img_count = $('.type-image').length;
+        // 按照筆數，逐筆抓取資料並寫入至 Database
+        for (var i = 1; i <= news_count_per_page; i++) {
 
-        // 將爬來的文章中的 figure area 替換成我設計的版型
-        for (var i = 1; i <= article_img_count; i++) {
+          var news_id = $(`#load > li:nth-of-type(${i}) .main_image > a.gtm-article-footerNews`).attr('href');
+          news_id = news_id.replace('/article/', '');
 
-          var figure_area = `<figure><img src="${$(`.dnd-atom-wrapper:nth-of-type(1)  img`).attr('src')}"><figcaption>${$(`.dnd-atom-wrapper:nth-of-type(1) .meta`).text()}</figcaption></figure>`
 
-          $(`.type-image:nth-of-type(1)`).replaceWith(figure_area);
+          // 寫入資料到 Database
+          var sql = `INSERT INTO news (news_id, channel_type) VALUES ('${news_id}', '${channel_type[channel_id]}')`;
 
+          connection_db(sql);
+
+          // 指定 channel_page 的資料寫入完成時，顯示: OK
+          if (i === news_count_per_page) {
+            console.log(`${channel_type[channel_id]} : page ${channel_page} is OK !`);
+          }
         }
-
-        // 文章內容處理
-
-        $('.article-wrapper > article > p').removeAttr('aid');
-        $('.article-wrapper > article > h2').removeAttr('class')
-
-        var article_content = $('.article-wrapper > article').html();
-        article_content = article_content.split('<div class="ad_article_block">')[0].trim();
-
-        // console.log(article_author);
-
-        // 寫入資料到 Database
-        var sql = `INSERT INTO news (title, author, publish_date, main_image, main_image_figcation, description, content) VALUES ('${article_title}', '${article_author}', '${article_date}', '${article_main_image}', '${article_main_image_figcation}', '${article_description}', '${htmlDncode(article_content)}')`;
-
-        connection_db(sql);
 
       } else {
 

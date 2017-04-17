@@ -19,11 +19,7 @@ var connection_db = function(sql_statment) {
 
   connection.connect()
 
-  connection.query(sql_statment, function (err, rows, fields) {
-
-    console.log(err);
-
-  })
+  connection.query(sql_statment, function (err, rows, fields) {})
 
   connection.end()
 
