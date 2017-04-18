@@ -17,7 +17,7 @@ var fetch_news = function(news_id) {
     , function (error, response, body) {
 
       if (response.statusCode == 200) {
-        console.log('status : ' + response.statusCode)
+        // console.log('status : ' + response.statusCode)
 
         var $ = cheerio.load(body);
 
@@ -51,12 +51,38 @@ var fetch_news = function(news_id) {
         var article_content = $('.article-wrapper > article').html();
         article_content = article_content.split('<div class="ad_article_block">')[0].trim();
 
-        // console.log(article_author);
+
+
+        // console.log(article_main_image);
 
         // 寫入資料到 Database
-        var sql = `INSERT INTO news (title, author, publish_date, main_image, main_image_figcation, description, content) VALUES ('${article_title}', '${article_author}', '${article_date}', '${article_main_image}', '${article_main_image_figcation}', '${article_description}', '${htmlDncode(article_content)}')`;
+        // var sql = `INSERT INTO news (title, author, publish_date, main_image, main_image_figcation, description, content) VALUES ('${article_title}', '${article_author}', '${article_date}', '${article_main_image}', '${article_main_image_figcation}', '${article_description}', '${htmlDncode(article_content)}')`;
 
-        connection_db(sql);
+        var sql = `UPDATE news SET
+        title = '${article_title}',
+        author = '${article_author}',
+        publish_date = '${article_date}',
+        main_image = '${article_main_image}',
+        main_image_figcation = '${article_main_image_figcation}',
+        description = '${article_description}',
+        content = '${htmlDncode(article_content)}}'
+        WHERE news_id = ${news_id}`;
+
+        console.log(news_id);
+
+
+        if (article_main_image !== 'undefined' || article_main_image !== undefined) {
+
+          connection_db().query(sql);
+
+        } else {
+
+          // console.log(`不執行 news id : ${news_id}`);
+        }
+
+        // console.log('finished');
+
+        connection_db().end();
 
       } else {
 

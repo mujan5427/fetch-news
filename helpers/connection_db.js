@@ -17,11 +17,14 @@ var connection_db = function(sql_statment) {
     database : 'my_mac_db'
   });
 
-  connection.connect()
+  connection.connect();
 
-  connection.query(sql_statment, function (err, rows, fields) {})
+  return connection;
 
-  connection.end()
+
+  // connection.query(sql_statment, function (err, rows, fields) {})
+
+  // connection.end()
 
 }
 
